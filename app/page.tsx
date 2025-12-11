@@ -1,32 +1,143 @@
-import Image from "next/image";
+"use client";
 
-export default function login_page() {
+import { useState } from "react";
+
+export default function LoginPage() {
+  const [surname, setSurname] = useState("");
+  const [date, setDate] = useState("");
+  const [group, setGroup] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      // Форматируем дату в нужный формат (YYYY-MM-DD -> DD.MM.YYYY или как требуется)
+      const formattedDate = date.split("-").reverse().join(".");
+
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          student_name: surname,
+          group_id: group,
+          birth_day: formattedDate,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Сохраняем данные для входа в localStorage (для автоматического перевхода)
+        const loginData = {
+          student_name: surname,
+          group_id: group,
+          birth_day: formattedDate,
+        };
+        localStorage.setItem("ej_login_data", JSON.stringify(loginData));
+        localStorage.setItem("ej_group_id", group);
+        
+        // Если ответ содержит cookies, сохраняем их
+        if (result.cookies) {
+          localStorage.setItem("ej_cookies", result.cookies);
+          
+          // Запрашиваем журнал
+          try {
+            const journalResponse = await fetch("/api/journal", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                cookies: result.cookies,
+              }),
+            });
+            
+            const journalResult = await journalResponse.json();
+            if (journalResult.success) {
+              // Сохраняем данные журнала
+              localStorage.setItem("journal_data", JSON.stringify(journalResult.data));
+            }
+          } catch (journalError) {
+            console.error("Error fetching journal:", journalError);
+          }
+        }
+        
+        // Перенаправляем на dashboard
+        window.location.href = "/dashboard";
+      } else {
+        setError(result.error || "Ошибка входа. Проверьте данные.");
+      }
+    } catch (err) {
+      setError("Произошла ошибка при входе");
+      console.error("Login error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="text-center mt-12 text-3xl flex flex-col gap-3 max-w-lg mx-auto">
-      <h1>
-        Добро пожаловать
-      </h1>
-    
-      <input
-        type="text"
-        className="mt-12 p-2 border-b border-black px-2 py-1 focus:outline-none text-lg"
-        placeholder="Введите фамилию">
-      </input>
-      <input
-        type="date"
-        className="mt-12 p-2 border-b border-black px-2 py-1 focus:outline-none text-lg"
-      >
-      </input>
-      <input
-        type="text"
-        className="mt-12 p-2 border-b border-black px-2 py-1 focus:outline-none text-lg"
-        placeholder="Введите группу">
-      </input>
-      <button
-        className="mt-12 border p-2 hover:"
-        >
-          Войти
-      </button>
+    <div className="min-h-screen flex items-center justify-center bg-white px-4">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-medium text-gray-900 mb-1">
+            Электронный журнал
+          </h1>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="bg-gray-50 rounded-xl px-4 py-3">
+            <input
+              type="text"
+              value={surname}
+              onChange={(e) => setSurname(e.target.value)}
+              className="w-full bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none text-base"
+              placeholder="Фамилия"
+              required
+            />
+          </div>
+
+          <div className="bg-gray-50 rounded-xl px-4 py-3">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full bg-transparent text-gray-900 focus:outline-none text-base"
+              required
+            />
+          </div>
+
+          <div className="bg-gray-50 rounded-xl px-4 py-3">
+            <input
+              type="text"
+              value={group}
+              onChange={(e) => setGroup(e.target.value)}
+              className="w-full bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none text-base"
+              placeholder="Группа"
+              required
+            />
+          </div>
+
+          {error && (
+            <div className="text-red-500 text-sm text-center mt-2">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#3390ec] hover:bg-[#2d7fd6] active:bg-[#2870c0] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl transition-colors mt-6"
+          >
+            {loading ? "Вход..." : "Войти"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
