@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import CustomSelect from "./components/CustomSelect";
 
 interface Group {
   id: string;
@@ -37,6 +38,12 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (!group) {
+      setError("Пожалуйста, выберите группу");
+      setLoading(false);
+      return;
+    }
 
     try {
       // Форматируем дату в нужный формат (YYYY-MM-DD -> DD.MM.YYYY или как требуется)
@@ -136,23 +143,14 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="bg-gray-50 rounded-xl px-4 py-3">
-            <select
+          <div>
+            <CustomSelect
+              options={groups}
               value={group}
-              onChange={(e) => setGroup(e.target.value)}
-              className="w-full bg-transparent text-gray-900 focus:outline-none text-base appearance-none cursor-pointer"
-              required
+              onChange={setGroup}
+              placeholder={loadingGroups ? "Загрузка групп..." : "Выберите группу"}
               disabled={loadingGroups}
-            >
-              <option value="" disabled>
-                {loadingGroups ? "Загрузка групп..." : "Выберите группу"}
-              </option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           {error && (
