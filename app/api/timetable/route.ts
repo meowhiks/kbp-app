@@ -150,11 +150,61 @@ async function fetchTimetablePage(groupId: string, journalGroupId: string): Prom
   }
 }
 
+function getPairTime(pairNumber: number, dayIndex: number): { start: string; end: string } {
+  const schedule: Record<number, Record<number, { start: string; end: string }>> = {
+    0: { 
+      1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+      4: { start: '10.45', end: '11.30' }, 5: { start: '12.00', end: '12.45' }, 6: { start: '12.55', end: '13.40' }, 
+      7: { start: '14.00', end: '14.45' }, 8: { start: '14.55', end: '15.40' }, 9: { start: '16.00', end: '16.45' }, 
+      10: { start: '16.55', end: '17.40' }, 11: { start: '17.50', end: '18.35' }, 12: { start: '18.45', end: '19.30' }, 
+      13: { start: '19.40', end: '20.25' }
+    },
+    1: { 
+      1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+      4: { start: '10.45', end: '11.30' }, 5: { start: '12.00', end: '12.45' }, 6: { start: '12.55', end: '13.40' }, 
+      7: { start: '14.00', end: '14.45' }, 8: { start: '14.55', end: '15.40' }, 9: { start: '16.00', end: '16.45' }, 
+      10: { start: '16.55', end: '17.40' }, 11: { start: '17.50', end: '18.35' }, 12: { start: '18.45', end: '19.30' }, 
+      13: { start: '19.40', end: '20.25' }
+    },
+    2: { 
+      1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+      4: { start: '10.45', end: '11.30' }, 5: { start: '12.00', end: '12.45' }, 6: { start: '12.55', end: '13.40' }, 
+      7: { start: '14.00', end: '14.45' }, 8: { start: '14.55', end: '15.40' }, 9: { start: '16.00', end: '16.45' }, 
+      10: { start: '16.55', end: '17.40' }, 11: { start: '17.50', end: '18.35' }, 12: { start: '18.45', end: '19.30' }, 
+      13: { start: '19.40', end: '20.25' }
+    },
+    3: { 
+      1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+      4: { start: '10.45', end: '11.30' }, 5: { start: '12.00', end: '12.45' }, 6: { start: '12.55', end: '13.40' }, 
+      7: { start: '14.40', end: '15.25' }, 8: { start: '15.35', end: '16.20' }, 9: { start: '16.30', end: '17.15' }, 
+      10: { start: '17.25', end: '18.10' }, 11: { start: '18.20', end: '19.05' }, 12: { start: '19.15', end: '20.00' }, 
+      13: { start: '20.10', end: '20.55' }
+    },
+    4: { 
+      1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+      4: { start: '10.45', end: '11.30' }, 5: { start: '12.00', end: '12.45' }, 6: { start: '12.55', end: '13.40' }, 
+      7: { start: '14.00', end: '14.45' }, 8: { start: '14.55', end: '15.40' }, 9: { start: '16.00', end: '16.45' }, 
+      10: { start: '16.55', end: '17.40' }, 11: { start: '17.50', end: '18.35' }, 12: { start: '18.45', end: '19.30' }, 
+      13: { start: '19.40', end: '20.25' }
+    },
+    5: { 
+      1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+      4: { start: '10.45', end: '11.30' }, 5: { start: '11.40', end: '12.25' }, 6: { start: '12.35', end: '13.20' }, 
+      7: { start: '13.40', end: '14.25' }, 8: { start: '14.35', end: '15.20' }, 9: { start: '15.30', end: '16.15' }, 
+      10: { start: '16.25', end: '17.10' }, 11: { start: '17.20', end: '18.05' }, 12: { start: '18.15', end: '19.00' }, 
+      13: { start: '19.10', end: '19.55' }
+    },
+  };
+  
+  return schedule[dayIndex]?.[pairNumber] || { start: '', end: '' };
+}
+
 function parseTimetable(html: string, groupId: string, groupName: string): any {
   const data: any = {
     groupId,
     groupName,
     pairs: [],
+    dayStartTimes: [{ start: '', end: '' }, { start: '', end: '' }, { start: '', end: '' }, { start: '', end: '' }, { start: '', end: '' }, { start: '', end: '' }],
   };
 
   const weekDays = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
@@ -287,36 +337,98 @@ function parseTimetable(html: string, groupId: string, groupName: string): any {
           pairData.subject = subjectMatch[1].trim();
         }
 
-        const leftColumnMatch = pairContent.match(/<div[^>]*class="[^"]*left-column[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
-        if (leftColumnMatch) {
-          const leftColumnContent = leftColumnMatch[1];
-          const teacherDivMatches = leftColumnContent.matchAll(/<div[^>]*class="[^"]*teacher[^"]*"[^>]*>([\s\S]*?)<\/div>/gi);
-          const teachers: string[] = [];
-          for (const teacherDivMatch of teacherDivMatches) {
-            const teacherDivContent = teacherDivMatch[1];
-            const teacherLinkMatches = teacherDivContent.matchAll(/<a[^>]*>([^<]+)<\/a>/gi);
-            for (const teacherLinkMatch of teacherLinkMatches) {
-              const teacher = teacherLinkMatch[1].trim();
-              if (teacher && teacher.length > 0 && teacher !== '&nbsp;' && teacher !== '') {
-                teachers.push(teacher);
+        const leftColumnStartMatch = pairContent.match(/<div[^>]*class="[^"]*left-column[^"]*"[^>]*>/i);
+        if (leftColumnStartMatch) {
+          const leftColumnStartPos = leftColumnStartMatch.index || 0;
+          const leftColumnTagStart = leftColumnStartPos + leftColumnStartMatch[0].length;
+          
+          let depth = 1;
+          let pos = leftColumnTagStart;
+          let leftColumnEndPos = -1;
+          const maxDepthIterations = 100;
+          let depthIterations = 0;
+          
+          while (pos < pairContent.length && depth > 0 && depthIterations < maxDepthIterations) {
+            depthIterations++;
+            const nextDivOpen = pairContent.indexOf('<div', pos);
+            const nextDivClose = pairContent.indexOf('</div>', pos);
+            
+            if (nextDivClose === -1) break;
+            
+            if (nextDivOpen !== -1 && nextDivOpen < nextDivClose) {
+              depth++;
+              pos = nextDivOpen + 4;
+            } else {
+              depth--;
+              if (depth === 0) {
+                leftColumnEndPos = nextDivClose;
+                break;
               }
+              pos = nextDivClose + 6;
             }
           }
-          pairData.teacher = teachers.filter(t => t && t.length > 0).join(', ');
+          
+          if (leftColumnEndPos !== -1) {
+            const leftColumnContent = pairContent.substring(leftColumnTagStart, leftColumnEndPos);
+            const teacherDivMatches = leftColumnContent.matchAll(/<div[^>]*class="[^"]*teacher[^"]*"[^>]*>([\s\S]*?)<\/div>/gi);
+            const teachers: string[] = [];
+            for (const teacherDivMatch of teacherDivMatches) {
+              const teacherDivContent = teacherDivMatch[1];
+              const teacherLinkMatches = teacherDivContent.matchAll(/<a[^>]*>([^<]+)<\/a>/gi);
+              for (const teacherLinkMatch of teacherLinkMatches) {
+                const teacher = teacherLinkMatch[1].trim();
+                if (teacher && teacher.length > 0 && teacher !== '&nbsp;' && teacher !== '') {
+                  teachers.push(teacher);
+                }
+              }
+            }
+            pairData.teacher = teachers.filter(t => t && t.length > 0).join(', ');
+          }
         }
 
-        const rightColumnMatch = pairContent.match(/<div[^>]*class="[^"]*right-column[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
-        if (rightColumnMatch) {
-          const rightColumnContent = rightColumnMatch[1];
-          const placeDivMatch = rightColumnContent.match(/<div[^>]*class="[^"]*place[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
-          if (placeDivMatch) {
-            const placeDivContent = placeDivMatch[1];
-            const placeLinkMatches = placeDivContent.matchAll(/<a[^>]*>([^<]+)<\/a>/gi);
-            for (const placeLinkMatch of placeLinkMatches) {
-              const room = placeLinkMatch[1].trim();
-              if (room && room.length > 0 && room !== '&nbsp;' && room !== '') {
-                pairData.room = room;
+        const rightColumnStartMatch = pairContent.match(/<div[^>]*class="[^"]*right-column[^"]*"[^>]*>/i);
+        if (rightColumnStartMatch) {
+          const rightColumnStartPos = rightColumnStartMatch.index || 0;
+          const rightColumnTagStart = rightColumnStartPos + rightColumnStartMatch[0].length;
+          
+          let depth = 1;
+          let pos = rightColumnTagStart;
+          let rightColumnEndPos = -1;
+          const maxDepthIterations = 100;
+          let depthIterations = 0;
+          
+          while (pos < pairContent.length && depth > 0 && depthIterations < maxDepthIterations) {
+            depthIterations++;
+            const nextDivOpen = pairContent.indexOf('<div', pos);
+            const nextDivClose = pairContent.indexOf('</div>', pos);
+            
+            if (nextDivClose === -1) break;
+            
+            if (nextDivOpen !== -1 && nextDivOpen < nextDivClose) {
+              depth++;
+              pos = nextDivOpen + 4;
+            } else {
+              depth--;
+              if (depth === 0) {
+                rightColumnEndPos = nextDivClose;
                 break;
+              }
+              pos = nextDivClose + 6;
+            }
+          }
+          
+          if (rightColumnEndPos !== -1) {
+            const rightColumnContent = pairContent.substring(rightColumnTagStart, rightColumnEndPos);
+            const placeDivMatch = rightColumnContent.match(/<div[^>]*class="[^"]*place[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+            if (placeDivMatch) {
+              const placeDivContent = placeDivMatch[1];
+              const placeLinkMatches = placeDivContent.matchAll(/<a[^>]*>([^<]+)<\/a>/gi);
+              for (const placeLinkMatch of placeLinkMatches) {
+                const room = placeLinkMatch[1].trim();
+                if (room && room.length > 0 && room !== '&nbsp;' && room !== '') {
+                  pairData.room = room;
+                  break;
+                }
               }
             }
           }
@@ -350,11 +462,31 @@ function parseTimetable(html: string, groupId: string, groupName: string): any {
   }
   
   console.log(`Parsed ${data.pairs.length} pairs for group ${groupName}`);
-  const pairsByPairNumber: Record<number, number> = {};
-  data.pairs.forEach((p: any) => {
-    pairsByPairNumber[p.pairNumber] = (pairsByPairNumber[p.pairNumber] || 0) + 1;
-  });
-  console.log(`Pairs by number:`, pairsByPairNumber);
+  
+  for (let dayIndex = 0; dayIndex < 6; dayIndex++) {
+    const dayPairs = data.pairs.filter((p: any) => {
+      if (p.day !== dayIndex) return false;
+      if (!p.subject) return false;
+      const subjectTrimmed = p.subject.trim();
+      if (subjectTrimmed === '' || subjectTrimmed === 'Урок снят') return false;
+      if (p.status === 'removed') return false;
+      if (p.status === 'cancelled') return false;
+      return p.status === 'added' || p.status === 'normal' || p.status === 'replaced' || !p.status;
+    });
+    if (dayPairs.length > 0) {
+      const firstPair = dayPairs.reduce((min: any, p: any) => p.pairNumber < min.pairNumber ? p : min, dayPairs[0]);
+      const lastPair = dayPairs.reduce((max: any, p: any) => p.pairNumber > max.pairNumber ? p : max, dayPairs[0]);
+      const firstTime = getPairTime(firstPair.pairNumber, dayIndex);
+      const lastTime = getPairTime(lastPair.pairNumber, dayIndex);
+      data.dayStartTimes[dayIndex] = {
+        start: firstTime.start,
+        end: lastTime.end
+      };
+      console.log(`Day ${dayIndex}: First pair is ${firstPair.pairNumber} (${firstPair.subject}, status: ${firstPair.status}), Last pair is ${lastPair.pairNumber} (${lastPair.subject}, status: ${lastPair.status}), time: ${data.dayStartTimes[dayIndex].start} - ${data.dayStartTimes[dayIndex].end}`);
+    }
+  }
+  
+  console.log(`Day start times:`, data.dayStartTimes);
   return data;
 }
 

@@ -325,6 +325,115 @@ export default function DashboardPage() {
     return subject.gradesMatrix[dateIdx] || [];
   };
 
+  const getCurrentPair = () => {
+    if (!timetableData || !timetableData.pairs) return null;
+    
+    const now = new Date();
+    const currentDay = now.getDay();
+    const dayIndex = currentDay === 0 ? 6 : currentDay - 1;
+    
+    if (dayIndex >= 6) return null;
+    
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentTime = currentHours * 60 + currentMinutes;
+    
+    const dayPairs = timetableData.pairs.filter((p: any) => {
+      if (p.day !== dayIndex) return false;
+      if (!p.subject) return false;
+      const subjectTrimmed = p.subject.trim();
+      if (subjectTrimmed === '') return false;
+      if (subjectTrimmed.toLowerCase().includes('урок снят')) return false;
+      if (subjectTrimmed === 'Урок снят') return false;
+      if (p.status === 'removed') return false;
+      if (p.status === 'cancelled') return false;
+      return p.status === 'added' || p.status === 'normal' || p.status === 'replaced' || !p.status;
+    });
+    
+    if (dayPairs.length === 0) return null;
+    
+    const getPairTimeMinutes = (timeStr: string): number => {
+      const [hours, minutes] = timeStr.split('.').map(Number);
+      return hours * 60 + minutes;
+    };
+    
+    for (const pair of dayPairs.sort((a: any, b: any) => a.pairNumber - b.pairNumber)) {
+      const pairTime = getPairTime(pair.pairNumber, dayIndex);
+      if (!pairTime.start || !pairTime.end) continue;
+      
+      const startMinutes = getPairTimeMinutes(pairTime.start);
+      const endMinutes = getPairTimeMinutes(pairTime.end);
+      
+      if (currentTime >= startMinutes && currentTime <= endMinutes) {
+        return { pairNumber: pair.pairNumber, day: dayIndex };
+      }
+    }
+    
+    for (const pair of dayPairs.sort((a: any, b: any) => a.pairNumber - b.pairNumber)) {
+      const pairTime = getPairTime(pair.pairNumber, dayIndex);
+      if (!pairTime.start) continue;
+      
+      const startMinutes = getPairTimeMinutes(pairTime.start);
+      
+      if (currentTime < startMinutes) {
+        return { pairNumber: pair.pairNumber, day: dayIndex };
+      }
+    }
+    
+    return null;
+  };
+
+  const getPairTime = (pairNumber: number, dayIndex: number): { start: string; end: string } => {
+    const schedule: Record<number, Record<number, { start: string; end: string }>> = {
+      0: { 
+        1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+        4: { start: '10.45', end: '11.30' }, 5: { start: '12.00', end: '12.45' }, 6: { start: '12.55', end: '13.40' }, 
+        7: { start: '14.00', end: '14.45' }, 8: { start: '14.55', end: '15.40' }, 9: { start: '16.00', end: '16.45' }, 
+        10: { start: '16.55', end: '17.40' }, 11: { start: '17.50', end: '18.35' }, 12: { start: '18.45', end: '19.30' }, 
+        13: { start: '19.40', end: '20.25' }
+      },
+      1: { 
+        1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+        4: { start: '10.45', end: '11.30' }, 5: { start: '12.00', end: '12.45' }, 6: { start: '12.55', end: '13.40' }, 
+        7: { start: '14.00', end: '14.45' }, 8: { start: '14.55', end: '15.40' }, 9: { start: '16.00', end: '16.45' }, 
+        10: { start: '16.55', end: '17.40' }, 11: { start: '17.50', end: '18.35' }, 12: { start: '18.45', end: '19.30' }, 
+        13: { start: '19.40', end: '20.25' }
+      },
+      2: { 
+        1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+        4: { start: '10.45', end: '11.30' }, 5: { start: '12.00', end: '12.45' }, 6: { start: '12.55', end: '13.40' }, 
+        7: { start: '14.00', end: '14.45' }, 8: { start: '14.55', end: '15.40' }, 9: { start: '16.00', end: '16.45' }, 
+        10: { start: '16.55', end: '17.40' }, 11: { start: '17.50', end: '18.35' }, 12: { start: '18.45', end: '19.30' }, 
+        13: { start: '19.40', end: '20.25' }
+      },
+      3: { 
+        1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+        4: { start: '10.45', end: '11.30' }, 5: { start: '12.00', end: '12.45' }, 6: { start: '12.55', end: '13.40' }, 
+        7: { start: '14.40', end: '15.25' }, 8: { start: '15.35', end: '16.20' }, 9: { start: '16.30', end: '17.15' }, 
+        10: { start: '17.25', end: '18.10' }, 11: { start: '18.20', end: '19.05' }, 12: { start: '19.15', end: '20.00' }, 
+        13: { start: '20.10', end: '20.55' }
+      },
+      4: { 
+        1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+        4: { start: '10.45', end: '11.30' }, 5: { start: '12.00', end: '12.45' }, 6: { start: '12.55', end: '13.40' }, 
+        7: { start: '14.00', end: '14.45' }, 8: { start: '14.55', end: '15.40' }, 9: { start: '16.00', end: '16.45' }, 
+        10: { start: '16.55', end: '17.40' }, 11: { start: '17.50', end: '18.35' }, 12: { start: '18.45', end: '19.30' }, 
+        13: { start: '19.40', end: '20.25' }
+      },
+      5: { 
+        1: { start: '8.00', end: '8.45' }, 2: { start: '8.55', end: '9.40' }, 3: { start: '9.50', end: '10.35' }, 
+        4: { start: '10.45', end: '11.30' }, 5: { start: '11.40', end: '12.25' }, 6: { start: '12.35', end: '13.20' }, 
+        7: { start: '13.40', end: '14.25' }, 8: { start: '14.35', end: '15.20' }, 9: { start: '15.30', end: '16.15' }, 
+        10: { start: '16.25', end: '17.10' }, 11: { start: '17.20', end: '18.05' }, 12: { start: '18.15', end: '19.00' }, 
+        13: { start: '19.10', end: '19.55' }
+      },
+    };
+    
+    return schedule[dayIndex]?.[pairNumber] || { start: '', end: '' };
+  };
+
+  const currentPair = getCurrentPair();
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
@@ -515,12 +624,60 @@ export default function DashboardPage() {
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
                       <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-10 bg-gray-100">#</th>
-                      <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">Пн</th>
-                      <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">Вт</th>
-                      <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">Ср</th>
-                      <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">Чт</th>
-                      <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">Пт</th>
-                      <th className="px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">Сб</th>
+                      <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">
+                        <div>Пн</div>
+                        {timetableData?.dayStartTimes?.[0]?.start && (
+                            <div className="text-[9px] font-normal text-gray-600 mt-0.5">
+                            <div className="text-gray-500">Начало - Конец:</div>
+                            <div>{timetableData.dayStartTimes[0].start} - {timetableData.dayStartTimes[0].end}</div>
+                          </div>
+                        )}
+                      </th>
+                      <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">
+                        <div>Вт</div>
+                        {timetableData?.dayStartTimes?.[1]?.start && (
+                          <div className="text-[9px] font-normal text-gray-600 mt-0.5">
+                            <div className="text-gray-500">Начало - Конец:</div>
+                            <div>{timetableData.dayStartTimes[1].start} - {timetableData.dayStartTimes[1].end}</div>
+                          </div>
+                        )}
+                      </th>
+                      <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">
+                        <div>Ср</div>
+                        {timetableData?.dayStartTimes?.[2]?.start && (
+                          <div className="text-[9px] font-normal text-gray-600 mt-0.5">
+                            <div className="text-gray-500">Начало - Конец:</div>
+                            <div>{timetableData.dayStartTimes[2].start} - {timetableData.dayStartTimes[2].end}</div>
+                          </div>
+                        )}
+                      </th>
+                      <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">
+                        <div>Чт</div>
+                        {timetableData?.dayStartTimes?.[3]?.start && (
+                          <div className="text-[9px] font-normal text-gray-600 mt-0.5">
+                            <div className="text-gray-500">Начало - Конец:</div>
+                            <div>{timetableData.dayStartTimes[3].start} - {timetableData.dayStartTimes[3].end}</div>
+                          </div>
+                        )}
+                      </th>
+                      <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">
+                        <div>Пт</div>
+                        {timetableData?.dayStartTimes?.[4]?.start && (
+                          <div className="text-[9px] font-normal text-gray-600 mt-0.5">
+                            <div className="text-gray-500">Начало - Конец:</div>
+                            <div>{timetableData.dayStartTimes[4].start} - {timetableData.dayStartTimes[4].end}</div>
+                          </div>
+                        )}
+                      </th>
+                      <th className="px-2 py-2 text-center font-semibold text-xs w-[calc((100%-40px)/6)]">
+                        <div>Сб</div>
+                        {timetableData?.dayStartTimes?.[5]?.start && (
+                          <div className="text-[9px] font-normal text-gray-600 mt-0.5">
+                            <div className="text-gray-500">Начало - Конец:</div>
+                            <div>{timetableData.dayStartTimes[5].start} - {timetableData.dayStartTimes[5].end}</div>
+                          </div>
+                        )}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -545,18 +702,26 @@ export default function DashboardPage() {
                           </td>
                           {pairsByDay.map((pairs, dayIdx) => {
                             const filteredPairs = pairs.filter((p: any) => {
-                              if (p.status === 'removed') {
-                                return showRemoved;
+                              if (showRemoved) {
+                                return p.status === 'removed' || p.status === 'replaced' || p.status === 'normal' || p.status === 'cancelled';
                               }
                               return p.status === 'added' || p.status === 'replaced' || p.status === 'normal' || p.status === 'cancelled';
                             });
                             
+                            const isCurrentPair = currentPair && currentPair.day === dayIdx && currentPair.pairNumber === pairNum;
+                            const hasValidPair = filteredPairs.some((p: any) => {
+                              if (!p.subject) return false;
+                              const subjectTrimmed = p.subject.trim();
+                              return subjectTrimmed !== '' && subjectTrimmed !== 'Урок снят';
+                            });
+                            
                             const getStatusColor = () => {
+                              if (isCurrentPair && hasValidPair) return 'bg-red-100 border-red-300';
                               if (filteredPairs.length === 0) return '';
                               if (filteredPairs.some((p: any) => p.status === 'added')) return 'bg-green-50 border-green-200';
                               if (filteredPairs.some((p: any) => p.status === 'removed')) return 'bg-red-50 border-red-200';
                               if (filteredPairs.some((p: any) => p.status === 'replaced')) return 'bg-yellow-50 border-yellow-200';
-                              return 'bg-blue-50/30 border-blue-100';
+                              return '';
                             };
                             
                             return (
@@ -621,21 +786,6 @@ export default function DashboardPage() {
                                           }
                                           return null;
                                         })()}
-                                        {pair.status !== 'normal' && (
-                                          <div className="mt-1">
-                                            <span className={`inline-block px-1.5 py-0.5 text-[9px] font-semibold rounded ${
-                                              pair.status === 'added' ? 'text-green-700 bg-green-200/50' :
-                                              pair.status === 'removed' ? 'text-red-700 bg-red-200/50' :
-                                              pair.status === 'replaced' ? 'text-yellow-700 bg-yellow-200/50' :
-                                              'text-gray-700 bg-gray-200/50'
-                                            }`}>
-                                              {pair.status === 'added' ? '+' :
-                                               pair.status === 'removed' ? '−' :
-                                               pair.status === 'replaced' ? '↻' :
-                                               '×'}
-                                            </span>
-                                          </div>
-                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -650,6 +800,29 @@ export default function DashboardPage() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            </div>
+            <div className="mt-4 px-1">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">Обозначения цветов:</h3>
+                <div className="flex flex-wrap gap-4 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-100/50 border border-green-200 rounded"></div>
+                    <span className="text-gray-700">Добавленные пары</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-100 border border-red-300 rounded"></div>
+                    <span className="text-gray-700">Текущая пара</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-yellow-100/50 border border-yellow-200 rounded"></div>
+                    <span className="text-gray-700">Замененные пары</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-50 border border-red-200 rounded"></div>
+                    <span className="text-gray-700">Снятые пары</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
