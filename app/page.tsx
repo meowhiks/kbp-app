@@ -113,8 +113,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-white px-4 py-16">
+      <div className="w-full max-w-sm mx-auto">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-medium text-gray-900 mb-1">
             Электронный журнал
