@@ -1,13 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface Group {
+  id: string;
+  name: string;
+}
 
 export default function LoginPage() {
   const [surname, setSurname] = useState("");
   const [date, setDate] = useState("");
   const [group, setGroup] = useState("");
+  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingGroups, setLoadingGroups] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const response = await fetch("/api/groups");
+        const result = await response.json();
+        if (result.success && result.groups) {
+          setGroups(result.groups);
+        }
+      } catch (err) {
+        console.error("Error fetching groups:", err);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+    fetchGroups();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,14 +137,22 @@ export default function LoginPage() {
           </div>
 
           <div className="bg-gray-50 rounded-xl px-4 py-3">
-            <input
-              type="text"
+            <select
               value={group}
               onChange={(e) => setGroup(e.target.value)}
-              className="w-full bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none text-base"
-              placeholder="Группа"
+              className="w-full bg-transparent text-gray-900 focus:outline-none text-base appearance-none cursor-pointer"
               required
-            />
+              disabled={loadingGroups}
+            >
+              <option value="" disabled>
+                {loadingGroups ? "Загрузка групп..." : "Выберите группу"}
+              </option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {error && (

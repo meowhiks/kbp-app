@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, readFile } from "fs/promises";
+import { writeFile, readFile, mkdir } from "fs/promises";
 import { join } from "path";
 
 interface Group {
@@ -56,8 +56,22 @@ function parseGroupsFromTimetable(html: string): Record<string, string> {
 
 async function getGroupsFromLoginPage(): Promise<Group[]> {
   try {
-    const filePath = join(process.cwd(), "ej-page.html");
-    const html = await readFile(filePath, "utf-8");
+    const timestamp = Date.now();
+    const response = await fetch(`https://ej.kbp.by/templates/login_parent.php?_=${timestamp}`, {
+      cache: "no-store",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Referer": "https://ej.kbp.by/",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+      },
+    });
+    const html = await response.text();
     
     const groups: Group[] = [];
     const optionMatches = html.matchAll(/<option\s+value="(\d+)"[^>]*>([^<]+)<\/option>/g);
@@ -70,10 +84,10 @@ async function getGroupsFromLoginPage(): Promise<Group[]> {
       }
     }
     
-    console.log(`Found ${groups.length} groups from ej-page.html`);
+    console.log(`Found ${groups.length} groups from login page`);
     return groups;
   } catch (error) {
-    console.error("Error reading groups from ej-page.html:", error);
+    console.error("Error fetching groups from login page:", error);
     return [];
   }
 }
@@ -87,6 +101,7 @@ async function fetchTimetablePage(groupId: string, journalGroupId: string): Prom
     let cachedSize = 0;
     
     try {
+      await mkdir(cacheDir, { recursive: true });
       const cachedContent = await readFile(cacheFilePath, "utf-8");
       cachedHtml = cachedContent;
       cachedSize = cachedContent.length;
@@ -121,6 +136,7 @@ async function fetchTimetablePage(groupId: string, journalGroupId: string): Prom
     }
     
     try {
+      await mkdir(cacheDir, { recursive: true });
       await writeFile(cacheFilePath, newHtml, "utf-8");
       console.log(`Timetable cached for group ${journalGroupId}:`, cacheFilePath);
     } catch (fileError) {
@@ -203,12 +219,18 @@ function parseTimetable(html: string, groupId: string, groupName: string): any {
       
       while (pairStartIndex < cellContent.length && iterations < maxIterations) {
         iterations++;
-        const pairStartMatch = cellContent.substring(pairStartIndex).match(/<div[^>]*class="[^"]*pair[^"]*"[^>]*>/i);
+        const pairStartMatch = cellContent.substring(pairStartIndex).match(/<div[^>]*class="([^"]*)"[^>]*>/i);
         if (!pairStartMatch) break;
         
         const pairStartPos = pairStartIndex + (pairStartMatch.index || 0);
-        const pairClasses = pairStartMatch[1];
+        const pairClasses = pairStartMatch[1] || '';
         const pairTagStart = pairStartPos + pairStartMatch[0].length;
+        
+        if (!pairClasses || !pairClasses.includes('pair')) {
+          pairStartIndex = pairTagStart + 1;
+          if (pairStartIndex >= cellContent.length) break;
+          continue;
+        }
         
         let depth = 1;
         let pos = pairTagStart;

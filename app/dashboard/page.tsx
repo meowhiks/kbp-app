@@ -494,7 +494,7 @@ export default function DashboardPage() {
 
         {timetableData && timetableData.pairs && timetableData.pairs.length > 0 && (
           <div className="mt-6">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 px-1">
               <h2 className="text-lg font-medium text-gray-900">
                 Расписание: {timetableData.groupName || 'Группа'}
               </h2>
@@ -505,12 +505,13 @@ export default function DashboardPage() {
                   onChange={(e) => setShowRemoved(e.target.checked)}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <span>Показать снятые пары</span>
+                <span className="hidden sm:inline">Показать снятые пары</span>
+                <span className="sm:hidden">Снятые</span>
               </label>
             </div>
             <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white">
-              <div className="overflow-hidden">
-                <table className="w-full border-collapse text-sm table-fixed">
+              <div className="overflow-x-auto overflow-y-hidden -webkit-overflow-scrolling-touch" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <table className="w-full border-collapse text-sm" style={{ minWidth: '600px' }}>
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
                       <th className="border-r border-gray-200 px-2 py-2 text-center font-semibold text-xs w-10 bg-gray-100">#</th>
