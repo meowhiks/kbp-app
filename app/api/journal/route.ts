@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
       html.includes('mark mar row');
     
     if (!isJournalAvailable) {
-      console.log("Journal not available - session expired or access denied");
       return NextResponse.json({
         success: false,
         error: "Journal not available. Session may have expired.",
@@ -46,7 +45,6 @@ export async function POST(request: NextRequest) {
     try {
       const filePath = join(process.cwd(), "journal.html");
       await writeFile(filePath, html, "utf-8");
-      console.log("Journal HTML saved to:", filePath);
     } catch (fileError) {
       console.error("Error saving journal HTML:", fileError);
     }
@@ -54,7 +52,6 @@ export async function POST(request: NextRequest) {
     const parsedData = parseJournalData(html);
 
     if (!parsedData.subjects || parsedData.subjects.length === 0) {
-      console.log("No subjects found in parsed data");
       return NextResponse.json({
         success: false,
         error: "No journal data found",
@@ -104,7 +101,6 @@ function parseJournalData(html: string): any {
       dates.push(match[1]);
     }
     data.dates = dates;
-    console.log(`Parsed ${dates.length} dates`);
   }
 
   // Парсим все названия предметов (из левой таблицы)
@@ -179,7 +175,6 @@ function parseJournalData(html: string): any {
           if (cellGrades.length > 0) {
             gradesMatrix[cellIndex] = cellGrades;
             if (title) {
-              console.log(`Grade ${cellGrades[0].value} at position ${cellIndex} has type: ${title}`);
             }
           }
         }
@@ -190,7 +185,6 @@ function parseJournalData(html: string): any {
     const average = averageMatch ? averageMatch[1].trim() : null;
 
     const gradesCount = Object.keys(gradesMatrix).length;
-    console.log(`Subject ${subjectId} (${subjectName}): ${gradesCount} cells with grades out of ${data.dates.length} dates`);
 
     data.subjects.push({
       id: subjectId,

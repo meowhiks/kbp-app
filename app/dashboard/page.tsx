@@ -15,6 +15,60 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showRemoved, setShowRemoved] = useState(false);
+  const [notifLink, setNotifLink] = useState<string | null>(null);
+  const [notifToken, setNotifToken] = useState<string | null>(null);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifError, setNotifError] = useState("");
+  const [notifCopied, setNotifCopied] = useState(false);
+
+  const handleEnableNotifications = async () => {
+    setNotifError("");
+    setNotifCopied(false);
+    setNotifLoading(true);
+    try {
+      const cookies = localStorage.getItem("ej_cookies");
+      const loginDataStr = localStorage.getItem("ej_login_data");
+      if (!cookies || !loginDataStr) {
+        setNotifError("Нужно заново войти, чтобы включить уведомления.");
+        return;
+      }
+
+      const loginData = JSON.parse(loginDataStr);
+      const response = await fetch("/api/bot/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_name: loginData.student_name,
+          group_id: loginData.group_id,
+          birth_day: loginData.birth_day,
+          cookies,
+        }),
+      });
+      const result = await response.json();
+      if (result.success && result.link && result.token) {
+        setNotifLink(result.link);
+        setNotifToken(result.token);
+      } else {
+        setNotifError(result.error || "Не удалось создать ссылку.");
+      }
+    } catch (err) {
+      console.error("Enable notifications error:", err);
+      setNotifError("Не удалось включить уведомления. Попробуйте позже.");
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const copyToken = async () => {
+    if (!notifToken) return;
+    try {
+      await navigator.clipboard.writeText(notifToken);
+      setNotifCopied(true);
+      setTimeout(() => setNotifCopied(false), 1500);
+    } catch {
+      setNotifError("Не удалось скопировать токен.");
+    }
+  };
 
   useEffect(() => {
     // Функция для автоматического входа
@@ -28,7 +82,6 @@ export default function DashboardPage() {
 
       try {
         const loginData = JSON.parse(loginDataStr);
-        console.log("Performing auto-login...");
 
         const response = await fetch("/api/login", {
           method: "POST",
@@ -81,7 +134,6 @@ export default function DashboardPage() {
         const timetableResult = await timetableResponse.json();
 
         if (timetableResult.success) {
-          console.log("Timetable data received:", timetableResult.data);
           localStorage.setItem("timetable_data", JSON.stringify(timetableResult.data));
           setTimetableData(timetableResult.data);
         } else {
@@ -127,7 +179,6 @@ export default function DashboardPage() {
           }
         } else {
           // Если журнал недоступен, пробуем перезайти
-          console.log("Journal not available, attempting auto-login...");
           await performAutoLogin();
         }
       } catch (journalError) {
@@ -603,21 +654,62 @@ export default function DashboardPage() {
 
         {timetableData && timetableData.pairs && timetableData.pairs.length > 0 && (
           <div className="mt-6">
-            <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex items-center justify-between mb-3 px-1 gap-3 flex-wrap">
               <h2 className="text-lg font-medium text-gray-900">
                 Расписание: {timetableData.groupName || 'Группа'}
               </h2>
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showRemoved}
-                  onChange={(e) => setShowRemoved(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="hidden sm:inline">Показать снятые пары</span>
-                <span className="sm:hidden">Снятые</span>
-              </label>
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleEnableNotifications}
+                  disabled={notifLoading}
+                  className="bg-[#3390ec] hover:bg-[#2d7fd6] disabled:bg-gray-400 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors"
+                >
+                  {notifLoading ? "Создание..." : "Включить уведомления"}
+                </button>
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showRemoved}
+                    onChange={(e) => setShowRemoved(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="hidden sm:inline">Показать снятые пары</span>
+                  <span className="sm:hidden">Снятые</span>
+                </label>
+              </div>
             </div>
+            {(notifLink || notifError) && (
+              <div className="mb-3 px-1">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex flex-col gap-2">
+                  {notifError && <div className="text-red-600 text-sm">{notifError}</div>}
+                  {notifLink && (
+                    <>
+                      <div className="text-sm text-gray-900">
+                        Отправьте эту ссылку или токен боту @kbp_journal_bot, чтобы привязать уведомления.
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-medium text-gray-800">Ссылка:</span>{" "}
+                        <a href={notifLink} className="text-blue-600 underline break-all" target="_blank" rel="noreferrer">
+                          {notifLink}
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium text-gray-800">Токен:</span>
+                        <span className="px-2 py-1 bg-white border border-gray-200 rounded">{notifToken}</span>
+                        <button
+                          type="button"
+                          onClick={copyToken}
+                          className="text-blue-600 hover:text-blue-700 text-xs font-medium"
+                        >
+                          {notifCopied ? "Скопировано" : "Копировать"}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white">
               <div className="overflow-x-auto overflow-y-hidden -webkit-overflow-scrolling-touch" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <table className="w-full border-collapse text-sm" style={{ minWidth: '600px' }}>

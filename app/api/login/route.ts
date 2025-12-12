@@ -31,7 +31,6 @@ async function getSCode(): Promise<{ sCode: string; cookies: string }> {
     try {
       const filePath = join(process.cwd(), "ej-page.html");
       await writeFile(filePath, html, "utf-8");
-      console.log("HTML saved to:", filePath);
     } catch (fileError) {
       console.error("Error saving HTML file:", fileError);
     }
@@ -52,7 +51,6 @@ async function getSCode(): Promise<{ sCode: string; cookies: string }> {
     for (const pattern of patterns) {
       const match = html.match(pattern);
       if (match && match[1] && match[1].length === 32) {
-        console.log("S_Code found:", match[1]);
         return { sCode: match[1], cookies };
       }
     }
@@ -61,11 +59,9 @@ async function getSCode(): Promise<{ sCode: string; cookies: string }> {
     const sCodeIndex = html.indexOf('S_Code');
     if (sCodeIndex !== -1) {
       const snippet = html.substring(Math.max(0, sCodeIndex - 50), Math.min(html.length, sCodeIndex + 150));
-      console.error("S_Code found but value not extracted. Snippet:", snippet);
       // Попробуем извлечь вручную из фрагмента
       const manualMatch = snippet.match(/value\s*=\s*["']([a-f0-9]{32})["']/i);
       if (manualMatch && manualMatch[1]) {
-        console.log("S_Code extracted manually:", manualMatch[1]);
         return { sCode: manualMatch[1], cookies };
       }
     } else {
@@ -86,8 +82,6 @@ export async function POST(request: NextRequest) {
 
     // Получаем S_Code с главной страницы и cookies
     const { sCode, cookies } = await getSCode();
-    console.log("Using S_Code:", sCode);
-    console.log("Cookies:", cookies);
 
     // Формируем данные для отправки на ajax.php
     // Порядок как в оригинальной форме: S_Code первым
@@ -98,17 +92,8 @@ export async function POST(request: NextRequest) {
     formData.append("group_id", group_id);
     formData.append("birth_day", birth_day);
     
-    console.log("Sending data:", {
-      action: "login_parent",
-      S_Code: sCode,
-      student_name,
-      group_id,
-      birth_day,
-    });
-
     // Отправляем данные на ajax.php
     const formDataString = formData.toString();
-    console.log("Form data string:", formDataString);
     
     // Формируем заголовки с cookies, если они есть
     const headers: Record<string, string> = {
@@ -132,7 +117,6 @@ export async function POST(request: NextRequest) {
     });
 
     const result = await ajaxResponse.text();
-    console.log("Ajax response:", result);
 
     // Получаем cookies из ответа ajax.php (особенно PHPSESSID)
     // Cookies могут приходить в разных форматах
@@ -159,7 +143,7 @@ export async function POST(request: NextRequest) {
       
       if (cookiePairs.length > 0) {
         sessionCookies = cookiePairs.join("; ");
-        console.log("Session cookies from ajax.php:", sessionCookies);
+        sessionCookies = cookiePairs.join("; ");
       }
     }
     

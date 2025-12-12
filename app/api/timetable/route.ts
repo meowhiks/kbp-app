@@ -25,7 +25,6 @@ async function fetchMainTimetablePage(): Promise<string> {
     try {
       const filePath = join(process.cwd(), "timetable-main.html");
       await writeFile(filePath, html, "utf-8");
-      console.log("Main timetable HTML saved to:", filePath);
     } catch (fileError) {
       console.error("Error saving main timetable HTML:", fileError);
     }
@@ -50,7 +49,6 @@ function parseGroupsFromTimetable(html: string): Record<string, string> {
     }
   }
   
-  console.log(`Found ${Object.keys(groupMap).length} groups in timetable`);
   return groupMap;
 }
 
@@ -84,7 +82,6 @@ async function getGroupsFromLoginPage(): Promise<Group[]> {
       }
     }
     
-    console.log(`Found ${groups.length} groups from login page`);
     return groups;
   } catch (error) {
     console.error("Error fetching groups from login page:", error);
@@ -105,9 +102,7 @@ async function fetchTimetablePage(groupId: string, journalGroupId: string): Prom
       const cachedContent = await readFile(cacheFilePath, "utf-8");
       cachedHtml = cachedContent;
       cachedSize = cachedContent.length;
-      console.log(`Found cached timetable for group ${journalGroupId}, size: ${cachedSize} bytes`);
     } catch (error) {
-      console.log(`No cached timetable found for group ${journalGroupId}`);
     }
     
     const url = `https://kbp.by/rasp/timetable/view_beta_kbp/?page=stable&cat=group&id=${groupId}`;
@@ -125,20 +120,16 @@ async function fetchTimetablePage(groupId: string, journalGroupId: string): Prom
     const newSize = newHtml.length;
     
     if (cachedHtml && cachedSize === newSize) {
-      console.log(`Timetable for group ${journalGroupId} unchanged (${newSize} bytes), using cache`);
       return cachedHtml;
     }
     
     if (cachedSize !== newSize) {
-      console.log(`Timetable for group ${journalGroupId} changed: ${cachedSize} -> ${newSize} bytes, updating cache`);
     } else {
-      console.log(`Saving new timetable for group ${journalGroupId} (${newSize} bytes)`);
     }
     
     try {
       await mkdir(cacheDir, { recursive: true });
       await writeFile(cacheFilePath, newHtml, "utf-8");
-      console.log(`Timetable cached for group ${journalGroupId}:`, cacheFilePath);
     } catch (fileError) {
       console.error("Error saving cached timetable:", fileError);
     }
@@ -221,13 +212,10 @@ function parseTimetable(html: string, groupId: string, groupName: string): any {
   }
   
   if (!tableContent) {
-    console.log("Timetable table not found in HTML");
-    console.log("HTML length:", html.length);
     return data;
   }
   
   const rowMatches = Array.from(tableContent.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g));
-  console.log(`Found ${rowMatches.length} table rows`);
   
   for (const rowMatch of rowMatches) {
     const rowContent = rowMatch[1];
@@ -435,7 +423,6 @@ function parseTimetable(html: string, groupId: string, groupName: string): any {
         }
         
         if (pairData.subject && (!pairData.teacher || !pairData.room)) {
-          console.log(`Pair ${pairData.pairNumber} day ${pairData.day}: subject="${pairData.subject}", teacher="${pairData.teacher}", room="${pairData.room}"`);
         }
 
         if (pairClasses.includes('added')) {
@@ -461,7 +448,6 @@ function parseTimetable(html: string, groupId: string, groupName: string): any {
     }
   }
   
-  console.log(`Parsed ${data.pairs.length} pairs for group ${groupName}`);
   
   for (let dayIndex = 0; dayIndex < 6; dayIndex++) {
     const dayPairs = data.pairs.filter((p: any) => {
@@ -482,11 +468,9 @@ function parseTimetable(html: string, groupId: string, groupName: string): any {
         start: firstTime.start,
         end: lastTime.end
       };
-      console.log(`Day ${dayIndex}: First pair is ${firstPair.pairNumber} (${firstPair.subject}, status: ${firstPair.status}), Last pair is ${lastPair.pairNumber} (${lastPair.subject}, status: ${lastPair.status}), time: ${data.dayStartTimes[dayIndex].start} - ${data.dayStartTimes[dayIndex].end}`);
     }
   }
   
-  console.log(`Day start times:`, data.dayStartTimes);
   return data;
 }
 
@@ -502,7 +486,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`Fetching timetable for group ID: ${groupId}`);
 
     const groups = await getGroupsFromLoginPage();
     const userGroup = groups.find(g => g.id === groupId);
@@ -514,7 +497,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`Found group: ${userGroup.name}`);
 
     const mainPageHtml = await fetchMainTimetablePage();
     const timetableGroupMap = parseGroupsFromTimetable(mainPageHtml);
@@ -529,13 +511,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`Mapping: ${userGroup.name} (journal ID: ${userGroup.id}) -> timetable ID: ${timetableId}`);
     
     const html = await fetchTimetablePage(timetableId, userGroup.id);
-    console.log(`Timetable HTML fetched, length: ${html.length}`);
 
     const timetableData = parseTimetable(html, timetableId, userGroup.name);
-    console.log(`Timetable parsed successfully, ${timetableData.pairs.length} pairs found`);
 
     return NextResponse.json({
       success: true,

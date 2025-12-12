@@ -1,0 +1,44 @@
+{
+  "users": [
+    {
+      "token": "0c8c38bbc6aa43ceb5bec800",
+      "studentName": "Лагун",
+      "groupId": "557",
+      "birthDay": "13.05.2009",
+      "cookies": "PHPSESSID=4f19b8f38a0dcf6cf35322c7bf02df8d; path=/",
+      "createdAt": "2025-12-12T07:36:43.530Z"
+    },
+    {
+      "token": "1bba5bc821b14b9d9c6a17ce",
+      "studentName": "Лагун",
+      "groupId": "557",
+      "birthDay": "13.05.2009",
+      "cookies": "PHPSESSID=4f19b8f38a0dcf6cf35322c7bf02df8d; path=/",
+      "createdAt": "2025-12-12T07:38:00.612Z"
+    },
+    {
+      "token": "b2139c1c8cbf433c9bc1cfa2",
+      "studentName": "Лагун",
+      "groupId": "557",
+      "birthDay": "13.05.2009",
+      "cookies": "PHPSESSID=4f19b8f38a0dcf6cf35322c7bf02df8d; path=/",
+      "createdAt": "2025-12-12T07:41:21.281Z"
+    },
+    {
+      "token": "7641048a9374428689da1419",
+      "studentName": "Лагун",
+      "groupId": "557",
+      "birthDay": "13.05.2009",
+      "cookies": "PHPSESSID=4f19b8f38a0dcf6cf35322c7bf02df8d; path=/",
+      "createdAt": "2025-12-12T07:44:15.156Z"
+    },
+    {
+      "token": "538667031fec4653b68b1c28",
+      "studentName": "Лагун",
+      "groupId": "557",
+      "birthDay": "13.05.2009",
+      "cookies": "PHPSESSID=4f19b8f38a0dcf6cf35322c7bf02df8d; path=/",
+      "createdAt": "2025-12-12T07:48:26.064Z"
+    }
+  ]
+}

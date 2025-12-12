@@ -35,7 +35,6 @@ async function getGroupsFromLoginPage(): Promise<Group[]> {
       }
     }
     
-    console.log(`Found ${groups.length} groups from login page`);
     return groups;
   } catch (error) {
     console.error("Error fetching groups from login page:", error);
