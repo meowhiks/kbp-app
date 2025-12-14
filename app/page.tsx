@@ -118,13 +118,13 @@ export default function LoginPage() {
         <div className="text-center mb-10">
           <h1 className="text-3xl font-medium text-gray-900 mb-1">
             Электронный журнал
-          </h1>
+      </h1>
         </div>
-
+    
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="bg-gray-50 rounded-xl px-4 py-3">
-            <input
-              type="text"
+      <input
+        type="text"
               value={surname}
               onChange={(e) => setSurname(e.target.value)}
               className="w-full bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none text-base"
@@ -134,8 +134,8 @@ export default function LoginPage() {
           </div>
 
           <div className="bg-gray-50 rounded-xl px-4 py-3">
-            <input
-              type="date"
+      <input
+        type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="w-full bg-transparent text-gray-900 focus:outline-none text-base"
@@ -159,13 +159,13 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button
+      <button
             type="submit"
             disabled={loading}
             className="w-full bg-[#3390ec] hover:bg-[#2d7fd6] active:bg-[#2870c0] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl transition-colors mt-6"
-          >
+        >
             {loading ? "Вход..." : "Войти"}
-          </button>
+      </button>
         </form>
       </div>
     </div>

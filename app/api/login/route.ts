@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import { join } from "path";
+import { addCorsHeaders, handleOptionsRequest } from "@/lib/cors";
 
 async function getSCode(): Promise<{ sCode: string; cookies: string }> {
   try {
@@ -75,7 +76,13 @@ async function getSCode(): Promise<{ sCode: string; cookies: string }> {
   }
 }
 
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get("origin") || undefined;
+  return handleOptionsRequest(origin);
+}
+
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get("origin") || undefined;
   try {
     const body = await request.json();
     const { student_name, group_id, birth_day } = body;
@@ -155,20 +162,22 @@ export async function POST(request: NextRequest) {
     // Проверяем, содержит ли ответ "good"
     const isSuccess = result.toLowerCase().includes("good");
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: isSuccess,
       data: result,
       cookies: sessionCookies,
     });
+    return addCorsHeaders(response, origin);
   } catch (error) {
     console.error("Login error:", error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
+    return addCorsHeaders(response, origin);
   }
 }
 

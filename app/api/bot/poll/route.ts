@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { getBoundUsers, updateSnapshots } from "@/lib/botStorage";
 import { sendTelegramMessage } from "@/lib/telegram";
+import { startAutoPoller } from "@/lib/autoPoller";
+
+startAutoPoller();
 
 export const dynamic = "force-dynamic";
 

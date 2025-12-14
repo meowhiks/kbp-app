@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { deleteWebhook, getUpdates, requireBotToken } from "@/lib/telegram";
 import { getOffset, setOffset } from "@/lib/botUpdates";
 import { handleUpdate } from "@/lib/botHandlers";
+import { startAutoPoller } from "@/lib/autoPoller";
 
 export const dynamic = "force-dynamic";
+
+startAutoPoller();
 
 export async function GET(request: NextRequest) {
   try {

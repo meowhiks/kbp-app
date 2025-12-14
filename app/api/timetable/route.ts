@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, readFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { addCorsHeaders, handleOptionsRequest } from "@/lib/cors";
 
 interface Group {
   id: string;
@@ -474,16 +475,23 @@ function parseTimetable(html: string, groupId: string, groupName: string): any {
   return data;
 }
 
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get("origin") || undefined;
+  return handleOptionsRequest(origin);
+}
+
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get("origin") || undefined;
   try {
     const body = await request.json();
     const { groupId } = body;
 
     if (!groupId) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: "Group ID is required" },
         { status: 400 }
       );
+      return addCorsHeaders(response, origin);
     }
 
 
@@ -491,10 +499,11 @@ export async function POST(request: NextRequest) {
     const userGroup = groups.find(g => g.id === groupId);
 
     if (!userGroup) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: false,
         error: `Group with ID ${groupId} not found`,
       });
+      return addCorsHeaders(response, origin);
     }
 
 
@@ -505,10 +514,11 @@ export async function POST(request: NextRequest) {
     
     if (!timetableId) {
       console.error(`Group ${userGroup.name} not found in timetable. Available groups:`, Object.keys(timetableGroupMap));
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: false,
         error: `Group ${userGroup.name} not found in timetable`,
       });
+      return addCorsHeaders(response, origin);
     }
 
     
@@ -516,7 +526,7 @@ export async function POST(request: NextRequest) {
 
     const timetableData = parseTimetable(html, timetableId, userGroup.name);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: timetableData,
       group: {
@@ -525,15 +535,17 @@ export async function POST(request: NextRequest) {
         name: userGroup.name,
       },
     });
+    return addCorsHeaders(response, origin);
   } catch (error) {
     console.error("Timetable fetch error:", error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
+    return addCorsHeaders(response, origin);
   }
 }
 

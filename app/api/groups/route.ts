@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { addCorsHeaders, handleOptionsRequest } from "@/lib/cors";
 
 interface Group {
   id: string;
@@ -42,16 +43,24 @@ async function getGroupsFromLoginPage(): Promise<Group[]> {
   }
 }
 
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get("origin") || undefined;
+  return handleOptionsRequest(origin);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const groups = await getGroupsFromLoginPage();
-    return NextResponse.json({
+    const origin = request.headers.get("origin") || undefined;
+    const response = NextResponse.json({
       success: true,
       groups: groups,
     });
+    return addCorsHeaders(response, origin);
   } catch (error) {
     console.error("Error fetching groups:", error);
-    return NextResponse.json(
+    const origin = request.headers.get("origin") || undefined;
+    const response = NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
@@ -59,6 +68,7 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
+    return addCorsHeaders(response, origin);
   }
 }
 

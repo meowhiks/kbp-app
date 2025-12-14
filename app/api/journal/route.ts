@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import { join } from "path";
+import { addCorsHeaders, handleOptionsRequest } from "@/lib/cors";
+
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get("origin") || undefined;
+  return handleOptionsRequest(origin);
+}
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get("origin") || undefined;
   try {
     const body = await request.json();
     const { cookies } = body;
 
     if (!cookies) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: "Cookies are required" },
         { status: 400 }
       );
+      return addCorsHeaders(response, origin);
     }
 
     const journalResponse = await fetch("https://ej.kbp.by/templates/parent_journal.php", {
@@ -36,10 +44,11 @@ export async function POST(request: NextRequest) {
       html.includes('mark mar row');
     
     if (!isJournalAvailable) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: false,
         error: "Journal not available. Session may have expired.",
       });
+      return addCorsHeaders(response, origin);
     }
     
     try {
@@ -52,25 +61,28 @@ export async function POST(request: NextRequest) {
     const parsedData = parseJournalData(html);
 
     if (!parsedData.subjects || parsedData.subjects.length === 0) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: false,
         error: "No journal data found",
       });
+      return addCorsHeaders(response, origin);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: parsedData,
     });
+    return addCorsHeaders(response, origin);
   } catch (error) {
     console.error("Journal fetch error:", error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
+    return addCorsHeaders(response, origin);
   }
 }
 

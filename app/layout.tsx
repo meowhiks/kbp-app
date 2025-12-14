@@ -28,7 +28,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
         <div className="flex-1">
-          {children}
+        {children}
         </div>
         <footer className="py-4 px-4">
           <div className="max-w-7xl mx-auto text-center">
